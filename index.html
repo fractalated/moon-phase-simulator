@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="An interactive lunar phase simulator: drag the Moon around its orbit and watch the phase you would see from Earth change in step.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Moon Phase Orrery">
+<meta property="og:description" content="Drag the Moon around its orbit and watch the phase you would see from Earth change in step.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%92%3C/text%3E%3C/svg%3E">
+<title>Moon Phase Orrery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif&display=swap">
+<style>
+  :root{
+    --ground:#F1F3F7; --surface:#FFFFFF; --surface-2:#E7EBF2; --line:#D2D8E4;
+    --text:#141821; --dim:#59627A; --accent:#C6820E; --accent-ink:#8A5A05;
+    --sky-1:#080B14; --sky-2:#141A2B; --sky-line:#2A3347; --sky-text:#C8D0E4; --sky-dim:#7D89A5;
+    --sun:#F6C445; --moonlit:#EBE4D4; --maria:#B7AE9B; --moondark:#1D2230; --earthday:#5C9BC9; --earthnight:#1E3448;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#0C0E15; --surface:#151926; --surface-2:#1D2332; --line:#2A3143;
+      --text:#E5E9F2; --dim:#96A0B8; --accent:#F0B429; --accent-ink:#F6C445;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0C0E15; --surface:#151926; --surface-2:#1D2332; --line:#2A3143;
+    --text:#E5E9F2; --dim:#96A0B8; --accent:#F0B429; --accent-ink:#F6C445;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground);color:var(--text);font-family:"Archivo",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding-inline:18px;padding-block:28px 48px}
+
+  header{margin-bottom:22px}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 6px}
+  h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:clamp(34px,6vw,50px);line-height:1.02;margin:0;letter-spacing:-.01em;text-wrap:balance}
+  .lede{margin:8px 0 0;max-width:60ch;color:var(--dim);font-size:15px}
+
+  .stages{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:stretch}
+  @media (max-width:820px){.stages{grid-template-columns:1fr}}
+
+  .stage{background:radial-gradient(120% 90% at 70% 10%,var(--sky-2),var(--sky-1));border:1px solid var(--sky-line);border-radius:16px;padding:12px 12px 10px;display:flex;flex-direction:column;overflow:hidden}
+  .stage svg{display:block;width:100%;height:auto;max-width:100%;touch-action:none}
+  .stage figcaption{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sky-dim);margin-top:8px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  #orbit-stage svg{cursor:grab}
+  #orbit-stage svg:active{cursor:grabbing}
+
+  .phase-name{font-family:"Instrument Serif",Georgia,serif;font-size:26px;color:var(--sky-text);text-align:center;margin:2px 0 0;line-height:1.1}
+  .phase-sub{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--sky-dim);text-align:center;letter-spacing:.06em}
+
+  .hemi{display:flex;gap:4px;justify-content:center;margin-top:10px}
+  .hemi button{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;background:transparent;color:var(--sky-dim);border:1px solid var(--sky-line);padding:5px 10px;border-radius:999px;cursor:pointer}
+  .hemi button[aria-pressed="true"]{background:var(--sky-line);color:var(--sky-text)}
+
+  .readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:16px}
+  .cell{background:var(--surface);padding:11px 13px}
+  .cell dt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:0}
+  .cell dd{margin:3px 0 0;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+  .controls{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn{font-family:"Archivo",sans-serif;font-size:13px;font-weight:500;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer}
+  .btn:hover{border-color:var(--dim)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1204}
+  .scrub{flex:1 1 220px;min-width:180px}
+  input[type=range]{width:100%;accent-color:var(--accent);height:26px}
+  .ticks{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:6px}
+  .ticks button{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;line-height:1.25;text-align:center;background:transparent;border:0;border-top:1px solid var(--line);padding:7px 1px 0;color:var(--dim);cursor:pointer}
+  .ticks button:hover,.ticks button[aria-current="true"]{color:var(--accent-ink);border-top-color:var(--accent)}
+
+  .notes{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
+  .notes h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:20px;margin:0 0 5px}
+  .notes p{margin:0;font-size:14px;color:var(--dim);max-width:46ch}
+  footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.06em;color:var(--dim)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<style>
+  :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  body{margin:0;font-size:14px}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Sun · Earth · Moon</p>
+    <h1>Moon Phase Orrery</h1>
+    <p class="lede">Drag the Moon around its orbit, or scrub through one synodic month. The left panel is the geometry from above; the right panel is what you would actually see looking up.</p>
+  </header>
+
+  <div class="stages">
+    <figure class="stage" id="orbit-stage" style="margin:0">
+      <svg id="orbit" viewBox="0 0 520 380" role="img" aria-label="Top-down view of the Moon orbiting Earth with sunlight arriving from the right">
+        <defs>
+          <radialGradient id="sunglow" cx="85%" cy="50%" r="60%">
+            <stop offset="0%" stop-color="#FFE9A8"/><stop offset="45%" stop-color="#F6C445"/><stop offset="100%" stop-color="#C9820E"/>
+          </radialGradient>
+        </defs>
+        <g id="stars-a"></g>
+        <circle cx="545" cy="190" r="86" fill="url(#sunglow)"/>
+        <g stroke="#F6C445" stroke-opacity=".22" stroke-width="1.5">
+          <path d="M452 86 H150"/><path d="M452 138 H120"/><path d="M452 190 H100"/><path d="M452 242 H120"/><path d="M452 294 H150"/>
+        </g>
+        <g fill="#F6C445" fill-opacity=".3">
+          <path d="M150 86 l9 -4 v8 z"/><path d="M120 138 l9 -4 v8 z"/><path d="M100 190 l9 -4 v8 z"/><path d="M120 242 l9 -4 v8 z"/><path d="M150 294 l9 -4 v8 z"/>
+        </g>
+        <text x="497" y="106" text-anchor="middle" fill="#3A2C08" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="1.6">SUN</text>
+
+        <circle cx="230" cy="190" r="128" fill="none" stroke="#2A3347" stroke-width="1" stroke-dasharray="3 6"/>
+        <g id="ghosts"></g>
+        <line id="sightline" x1="230" y1="190" x2="358" y2="190" stroke="#7D89A5" stroke-opacity=".5" stroke-width="1" stroke-dasharray="2 4"/>
+
+        <g>
+          <circle cx="230" cy="190" r="24" fill="#1E3448"/>
+          <path d="M230 166 A24 24 0 0 1 230 214 Z" fill="#5C9BC9"/>
+          <circle cx="230" cy="190" r="24" fill="none" stroke="#8FC0E0" stroke-opacity=".35"/>
+          <text x="230" y="232" text-anchor="middle" fill="#7D89A5" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="1.4">EARTH</text>
+        </g>
+
+        <g id="moon-marker">
+          <circle r="15" fill="#1D2230"/>
+          <path d="M0 -15 A15 15 0 0 1 0 15 Z" fill="#EBE4D4"/>
+          <circle r="15" fill="none" stroke="#EBE4D4" stroke-opacity=".45"/>
+          <circle r="25" fill="none" stroke="#F0B429" stroke-opacity=".55" stroke-width="1.5"/>
+        </g>
+      </svg>
+      <figcaption><span>View from above the north pole</span><span>Drag the Moon</span></figcaption>
+    </figure>
+
+    <figure class="stage" style="margin:0">
+      <svg id="moonview" viewBox="-124 -124 248 248" role="img" aria-label="The Moon as seen from Earth">
+        <defs>
+          <radialGradient id="litgrad" cx="38%" cy="32%" r="78%">
+            <stop offset="0%" stop-color="#FBF6E9"/><stop offset="60%" stop-color="#EBE4D4"/><stop offset="100%" stop-color="#C9C0AC"/>
+          </radialGradient>
+          <radialGradient id="earthshine" cx="50%" cy="45%" r="70%">
+            <stop offset="0%" stop-color="#3C4560"/><stop offset="100%" stop-color="#191E2C"/>
+          </radialGradient>
+          <clipPath id="litclip"><path id="litpath" d=""/></clipPath>
+        </defs>
+        <g id="stars-b"></g>
+        <circle id="darkdisc" r="100" fill="url(#earthshine)" opacity=".85"/>
+        <g id="moonrot">
+          <circle r="100" fill="url(#litgrad)" clip-path="url(#litclip)"/>
+          <g clip-path="url(#litclip)" fill="#B3AA96" fill-opacity=".55">
+            <ellipse cx="-30" cy="-40" rx="27" ry="21"/>
+            <ellipse cx="8" cy="-33" rx="16" ry="14"/>
+            <ellipse cx="31" cy="-13" rx="18" ry="16"/>
+            <ellipse cx="57" cy="-33" rx="10" ry="8"/>
+            <ellipse cx="48" cy="8" rx="12" ry="15"/>
+            <ellipse cx="29" cy="20" rx="10" ry="9"/>
+            <ellipse cx="-56" cy="2" rx="20" ry="41"/>
+            <ellipse cx="-20" cy="34" rx="19" ry="12"/>
+            <circle cx="-10" cy="63" r="6" fill="#FBF6E9" fill-opacity=".5"/>
+          </g>
+        </g>
+        <circle r="100" fill="none" stroke="#EBE4D4" stroke-opacity=".18"/>
+      </svg>
+      <p class="phase-name" id="phase-name" aria-live="polite">Waxing Gibbous</p>
+      <p class="phase-sub" id="phase-sub">HIGH IN THE SOUTH AFTER SUNSET</p>
+      <div class="hemi" role="group" aria-label="Observer hemisphere">
+        <button type="button" id="hemi-n" aria-pressed="true">Northern</button>
+        <button type="button" id="hemi-s" aria-pressed="false">Southern</button>
+      </div>
+      <figcaption><span>Naked-eye view</span><span id="hemi-cap">40&deg;N</span></figcaption>
+    </figure>
+  </div>
+
+  <dl class="readout">
+    <div class="cell"><dt>Illuminated</dt><dd id="r-illum">—</dd></div>
+    <div class="cell"><dt>Moon age</dt><dd id="r-age">—</dd></div>
+    <div class="cell"><dt>Elongation</dt><dd id="r-elong">—</dd></div>
+    <div class="cell"><dt>Moonrise</dt><dd id="r-rise">—</dd></div>
+    <div class="cell"><dt>Moonset</dt><dd id="r-set">—</dd></div>
+  </dl>
+
+  <div class="controls">
+    <div class="row">
+      <button type="button" class="btn primary" id="play">Play</button>
+      <button type="button" class="btn" id="today">Today&rsquo;s moon</button>
+      <div class="scrub">
+        <input type="range" id="slider" min="0" max="29.53" step="0.01" value="0" aria-label="Day of the lunar month">
+      </div>
+    </div>
+    <div class="ticks" id="ticks"></div>
+  </div>
+
+  <section class="notes">
+    <div>
+      <h2>It isn&rsquo;t Earth&rsquo;s shadow</h2>
+      <p>Half the Moon is always lit. A phase is just how much of that lit half is turned toward us. Earth&rsquo;s shadow only touches the Moon during a lunar eclipse &mdash; rare, because the orbit is tilted about 5&deg; and usually misses.</p>
+    </div>
+    <div>
+      <h2>There is no dark side</h2>
+      <p>The same face points at us always, but sunlight sweeps across it: every spot on the Moon gets roughly 14.8 days of day and 14.8 days of night. The far side is unseen, not unlit.</p>
+    </div>
+    <div>
+      <h2>Daytime moons are normal</h2>
+      <p>Only the full moon rises at sunset and sets at sunrise. A first quarter moon rises around noon and is easy to spot in an afternoon sky &mdash; the Moon rises about 50 minutes later each day.</p>
+    </div>
+  </section>
+
+  <footer>Geometry is exact &middot; distances and sizes are not to scale &mdash; the real orbit is about 30 Earth-diameters wide &middot; rise and set times are idealized for a mid-latitude horizon &middot; <a href="https://github.com/fractalated/moon-phase-orrery" style="color:inherit">source on github</a></footer>
+</div>
+
+<script>
+(function(){
+  var SYN = 29.530588853;
+  var EPOCH = Date.UTC(2000,0,6,18,14);
+  var TAU = Math.PI*2;
+  var day = 0, playing = false, south = false, last = 0, raf = 0;
+
+  var PHASES = [
+    {n:"New Moon", s:"Lost in the Sun&rsquo;s glare"},
+    {n:"Waxing Crescent", s:"Low in the west after sunset"},
+    {n:"First Quarter", s:"Due south at sunset"},
+    {n:"Waxing Gibbous", s:"High in the south after sunset"},
+    {n:"Full Moon", s:"Rises at sunset, up all night"},
+    {n:"Waning Gibbous", s:"Still up after sunrise"},
+    {n:"Last Quarter", s:"Due south at sunrise"},
+    {n:"Waning Crescent", s:"Low in the east before dawn"}
+  ];
+
+  function todayAge(){ var d=(Date.now()-EPOCH)/86400000; return ((d%SYN)+SYN)%SYN; }
+  function wrap(d){ return ((d%SYN)+SYN)%SYN; }
+
+  function phaseIndex(d){
+    // narrow bands for the four principal phases, broad names between
+    if(d<1.0 || d>SYN-1.0) return 0;
+    if(Math.abs(d-SYN/4)<0.75) return 2;
+    if(Math.abs(d-SYN/2)<1.0) return 4;
+    if(Math.abs(d-3*SYN/4)<0.75) return 6;
+    if(d<SYN/4) return 1;
+    if(d<SYN/2) return 3;
+    if(d<3*SYN/4) return 5;
+    return 7;
+  }
+
+  function fmtTime(h){
+    h=((h%24)+24)%24;
+    var hh=Math.floor(h), mm=Math.round((h-hh)*60);
+    if(mm===60){mm=0;hh=(hh+1)%24;}
+    var ap=hh<12?"am":"pm", h12=hh%12; if(h12===0)h12=12;
+    return h12+":"+(mm<10?"0":"")+mm+" "+ap;
+  }
+
+  function litPath(R,theta){
+    var c=Math.cos(theta), rx=Math.abs(c)*R, sw=c>0?0:1;
+    return "M 0 "+(-R)+" A "+R+" "+R+" 0 0 1 0 "+R+" A "+rx.toFixed(2)+" "+R+" 0 0 "+sw+" 0 "+(-R)+" Z";
+  }
+
+  // --- static decoration -------------------------------------------------
+  function stars(id,w,h,ox,oy,n){
+    var g=document.getElementById(id), s="";
+    for(var i=0;i<n;i++){
+      var x=(ox+Math.random()*w).toFixed(1), y=(oy+Math.random()*h).toFixed(1);
+      var r=(0.5+Math.random()*0.9).toFixed(2), o=(0.12+Math.random()*0.4).toFixed(2);
+      s+='<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#E8EDFA" opacity="'+o+'"/>';
+    }
+    g.innerHTML=s;
+  }
+  stars("stars-a",520,380,0,0,70);
+  stars("stars-b",248,248,-124,-124,45);
+
+  var ghosts=document.getElementById("ghosts"), gh="";
+  for(var i=0;i<8;i++){
+    var a=i*45*Math.PI/180, gx=230+128*Math.cos(a), gy=190-128*Math.sin(a);
+    gh+='<g class="ghost" data-i="'+i+'" transform="translate('+gx.toFixed(1)+','+gy.toFixed(1)+')" style="cursor:pointer">'
+      + '<circle r="16" fill="transparent"/>'
+      + '<circle r="7" fill="#1D2230"/>'
+      + '<path d="M0 -7 A7 7 0 0 1 0 7 Z" fill="#EBE4D4" opacity=".55"/>'
+      + '<circle r="7" fill="none" stroke="#7D89A5" stroke-opacity=".45"/></g>';
+  }
+  ghosts.innerHTML=gh;
+
+  var ticks=document.getElementById("ticks"), th="";
+  var SHORT=["New","Wax<br>cres","First<br>qtr","Wax<br>gib","Full","Wan<br>gib","Last<br>qtr","Wan<br>cres"];
+  for(var j=0;j<8;j++) th+='<button type="button" data-i="'+j+'">'+SHORT[j]+'</button>';
+  ticks.innerHTML=th;
+
+  // --- elements ----------------------------------------------------------
+  var elPath=document.getElementById("litpath"), elRot=document.getElementById("moonrot"),
+      elDark=document.getElementById("darkdisc"), elMarker=document.getElementById("moon-marker"),
+      elSight=document.getElementById("sightline"), elName=document.getElementById("phase-name"),
+      elSub=document.getElementById("phase-sub"), elSlider=document.getElementById("slider"),
+      elPlay=document.getElementById("play"), tickBtns=ticks.querySelectorAll("button");
+
+  function render(){
+    var theta = day/SYN*TAU;
+    var k = (1-Math.cos(theta))/2;
+    var idx = phaseIndex(day);
+
+    elPath.setAttribute("d", litPath(100,theta));
+    elPath.setAttribute("transform", theta>Math.PI ? "scale(-1,1)" : "");
+    elRot.setAttribute("transform", south ? "rotate(180)" : "");
+    elDark.setAttribute("opacity", (0.35+0.5*(1-k)).toFixed(2));
+
+    var a = theta, mx = 230+128*Math.cos(a), my = 190-128*Math.sin(a);
+    elMarker.setAttribute("transform","translate("+mx.toFixed(1)+","+my.toFixed(1)+")");
+    elSight.setAttribute("x2",mx.toFixed(1)); elSight.setAttribute("y2",my.toFixed(1));
+
+    elName.innerHTML = PHASES[idx].n;
+    elSub.innerHTML = PHASES[idx].s.toUpperCase();
+
+    document.getElementById("r-illum").textContent = (k*100).toFixed(0)+"%";
+    document.getElementById("r-age").textContent = day.toFixed(1)+" d";
+    document.getElementById("r-elong").textContent = (day/SYN*360).toFixed(0)+"°";
+    var rise = 6 + day*(24/SYN);
+    document.getElementById("r-rise").textContent = fmtTime(rise);
+    document.getElementById("r-set").textContent = fmtTime(rise+12);
+
+    if(document.activeElement!==elSlider) elSlider.value = day.toFixed(2);
+    for(var t=0;t<tickBtns.length;t++) tickBtns[t].setAttribute("aria-current", t===idx ? "true":"false");
+  }
+
+  function setDay(d){ day = wrap(d); render(); }
+
+  // --- interaction -------------------------------------------------------
+  elSlider.addEventListener("input", function(){ setDay(parseFloat(elSlider.value)); });
+
+  for(var b=0;b<tickBtns.length;b++){
+    tickBtns[b].addEventListener("click", function(e){ stop(); setDay(parseInt(e.currentTarget.dataset.i,10)*SYN/8); });
+  }
+  ghosts.addEventListener("click", function(e){
+    var g = e.target.closest(".ghost"); if(!g) return;
+    stop(); setDay(parseInt(g.dataset.i,10)*SYN/8);
+  });
+
+  var svg = document.getElementById("orbit"), dragging=false;
+  function pointTo(ev){
+    var p = svg.createSVGPoint(); p.x=ev.clientX; p.y=ev.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function dragTo(ev){
+    var p = pointTo(ev);
+    var ang = Math.atan2(-(p.y-190), p.x-230);
+    if(ang<0) ang += TAU;
+    setDay(ang/TAU*SYN);
+  }
+  svg.addEventListener("pointerdown", function(ev){
+    if(ev.target.closest(".ghost")) return;
+    dragging=true; stop(); svg.setPointerCapture(ev.pointerId); dragTo(ev); ev.preventDefault();
+  });
+  svg.addEventListener("pointermove", function(ev){ if(dragging) dragTo(ev); });
+  svg.addEventListener("pointerup", function(ev){ dragging=false; try{svg.releasePointerCapture(ev.pointerId);}catch(e){} });
+  svg.addEventListener("pointercancel", function(){ dragging=false; });
+
+  function stop(){ playing=false; elPlay.textContent="Play"; if(raf) cancelAnimationFrame(raf); raf=0; }
+  elPlay.addEventListener("click", function(){
+    if(playing){ stop(); return; }
+    playing=true; elPlay.textContent="Pause"; last=performance.now();
+    (function loop(t){
+      if(!playing) return;
+      var dt=(t-last)/1000; last=t;
+      setDay(day + dt*(SYN/22));
+      raf=requestAnimationFrame(loop);
+    })(last);
+  });
+  document.getElementById("today").addEventListener("click", function(){ stop(); setDay(todayAge()); });
+
+  var hn=document.getElementById("hemi-n"), hs=document.getElementById("hemi-s"), hc=document.getElementById("hemi-cap");
+  function setHemi(v){
+    south=v;
+    hn.setAttribute("aria-pressed", String(!v)); hs.setAttribute("aria-pressed", String(v));
+    hc.textContent = v ? "35°S" : "40°N";
+    render();
+  }
+  hn.addEventListener("click", function(){ setHemi(false); });
+  hs.addEventListener("click", function(){ setHemi(true); });
+
+  setDay(todayAge());
+})();
+</script>
+</body>
+</html>
