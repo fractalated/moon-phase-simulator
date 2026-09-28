@@ -16,19 +16,19 @@
 <style>
   :root{
     --ground:#F1F3F7; --surface:#FFFFFF; --surface-2:#E7EBF2; --line:#D2D8E4;
-    --text:#141821; --dim:#59627A; --accent:#C6820E; --accent-ink:#8A5A05;
+    --text:#141821; --dim:#59627A; --accent:#C6820E; --accent-ink:#8A5A05; --warn:#B23B26;
     --sky-1:#080B14; --sky-2:#141A2B; --sky-line:#2A3347; --sky-text:#C8D0E4; --sky-dim:#7D89A5;
     --sun:#F6C445; --moonlit:#EBE4D4; --maria:#B7AE9B; --moondark:#1D2230; --earthday:#5C9BC9; --earthnight:#1E3448;
   }
   @media (prefers-color-scheme:dark){
     :root:not([data-theme="light"]){
       --ground:#0C0E15; --surface:#151926; --surface-2:#1D2332; --line:#2A3143;
-      --text:#E5E9F2; --dim:#96A0B8; --accent:#F0B429; --accent-ink:#F6C445;
+      --text:#E5E9F2; --dim:#96A0B8; --accent:#F0B429; --accent-ink:#F6C445; --warn:#F08A73;
     }
   }
   :root[data-theme="dark"]{
     --ground:#0C0E15; --surface:#151926; --surface-2:#1D2332; --line:#2A3143;
-    --text:#E5E9F2; --dim:#96A0B8; --accent:#F0B429; --accent-ink:#F6C445;
+    --text:#E5E9F2; --dim:#96A0B8; --accent:#F0B429; --accent-ink:#F6C445; --warn:#F08A73;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -85,6 +85,28 @@
     .row .btn{flex:1 1 auto}
     .scrub{flex-basis:100%}
   }
+
+  .lookup{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px}
+  .lookup h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:22px;margin:0}
+  .lookup .hint{margin:2px 0 12px;font-size:13.5px;color:var(--dim);max-width:62ch}
+  .lu-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+  .lu-form label{display:flex;flex-direction:column;gap:4px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .lu-form input,.lu-form select{font-family:"Archivo",sans-serif;font-size:16px;color:var(--text);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:0 9px;height:38px}
+  #lu-month{width:132px} #lu-day{width:68px} #lu-year{width:92px} #lu-era{width:76px}
+  .lu-form .btn{height:38px}
+  .lu-msg{margin:10px 0 0;font-size:13.5px;color:var(--warn)}
+  .lu-result{margin-top:14px;border-top:1px solid var(--line);padding-top:14px;display:grid;grid-template-columns:60px 1fr;gap:12px 14px;align-items:center}
+  .lu-icon{width:60px;height:60px;display:block}
+  .lu-date{font-family:"Instrument Serif",Georgia,serif;font-size:22px;line-height:1.15;margin:0}
+  .lu-phase{margin:3px 0 0;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.03em;color:var(--dim)}
+  .lu-cycle{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .lu-cycle li{background:var(--surface);padding:8px 11px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;line-height:1.45;font-variant-numeric:tabular-nums}
+  .lu-cycle li b{display:block;font-weight:500;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .lu-cycle li.you{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--accent)}
+  .lu-cycle li.you b{color:var(--accent-ink)}
+  .lu-cycle .tm{color:var(--dim)}
+  .lu-note{grid-column:1/-1;margin:0;font-size:12.5px;color:var(--dim);max-width:80ch}
+  @media (max-width:560px){ .lu-form .btn{flex:1 1 100%} .lu-date{font-size:20px} }
 
   .notes{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
   .notes h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:20px;margin:0 0 5px}
@@ -206,6 +228,29 @@
     <div class="ticks" id="ticks"></div>
   </div>
 
+  <section class="lookup" aria-labelledby="lu-h">
+    <h2 id="lu-h">Look up any date</h2>
+    <p class="hint">Pick any date from 5000&nbsp;BC to AD&nbsp;5000 and see the Moon as it looked, or will look, that evening.</p>
+    <form class="lu-form" id="lu-form" novalidate>
+      <label>Month<select id="lu-month"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+      <label>Day<input id="lu-day" type="number" inputmode="numeric" min="1" max="31"></label>
+      <label>Year<input id="lu-year" type="number" inputmode="numeric" min="1" max="5000"></label>
+      <label>Era<select id="lu-era"><option value="AD">AD</option><option value="BC">BC</option></select></label>
+      <button type="submit" class="btn primary">Show the Moon</button>
+    </form>
+    <p class="lu-msg" id="lu-msg" role="alert" hidden></p>
+    <div class="lu-result" id="lu-result" hidden>
+      <svg class="lu-icon" viewBox="-12 -12 24 24" aria-hidden="true">
+        <circle r="10.5" fill="#1D2230"/>
+        <g id="lu-rot"><path id="lu-lit" fill="#EBE4D4"/></g>
+        <circle r="10.5" fill="none" stroke="#7D89A5" stroke-opacity=".5" stroke-width=".6"/>
+      </svg>
+      <div><p class="lu-date" id="lu-date" aria-live="polite"></p><p class="lu-phase" id="lu-phase"></p></div>
+      <ol class="lu-cycle" id="lu-cycle"></ol>
+      <p class="lu-note" id="lu-note"></p>
+    </div>
+  </section>
+
   <section class="notes">
     <div>
       <h2>It isn&rsquo;t Earth&rsquo;s shadow</h2>
@@ -227,7 +272,6 @@
 <script>
 (function(){
   var SYN = 29.530588853;
-  var EPOCH = Date.UTC(2000,0,6,18,14);
   var TAU = Math.PI*2;
   var day = 0, playing = false, south = false, last = 0, raf = 0;
 
@@ -242,7 +286,6 @@
     {n:"Waning Crescent", s:"Low in the east before dawn"}
   ];
 
-  function todayAge(){ var d=(Date.now()-EPOCH)/86400000; return ((d%SYN)+SYN)%SYN; }
   function wrap(d){ return ((d%SYN)+SYN)%SYN; }
 
   function phaseIndex(d){
@@ -255,6 +298,114 @@
     if(d<SYN/2) return 3;
     if(d<3*SYN/4) return 5;
     return 7;
+  }
+
+  // --- astronomy: Moon–Sun elongation at any instant ----------------------
+  // Mean elements and main periodic terms from Meeus, Astronomical Algorithms
+  // (ch. 25 & 47); Delta-T from the Espenak–Meeus polynomials.
+  var DEG = Math.PI/180;
+  function norm360(x){ x %= 360; return x<0 ? x+360 : x; }
+
+  function deltaT(y){                      // seconds; y = decimal year
+    var u, t;
+    if(y < -500 || y >= 2150){ u = (y-1820)/100; return -20 + 32*u*u; }
+    if(y < 500){ u = y/100;
+      return 10583.6 - 1014.41*u + 33.78311*u*u - 5.952053*u*u*u - 0.1798452*Math.pow(u,4) + 0.022174192*Math.pow(u,5) + 0.0090316521*Math.pow(u,6); }
+    if(y < 1600){ u = (y-1000)/100;
+      return 1574.2 - 556.01*u + 71.23472*u*u + 0.319781*u*u*u - 0.8503463*Math.pow(u,4) - 0.005050998*Math.pow(u,5) + 0.0083572073*Math.pow(u,6); }
+    if(y < 1700){ t = y-1600; return 120 - 0.9808*t - 0.01532*t*t + t*t*t/7129; }
+    if(y < 1800){ t = y-1700; return 8.83 + 0.1603*t - 0.0059285*t*t + 0.00013336*t*t*t - Math.pow(t,4)/1174000; }
+    if(y < 1860){ t = y-1800;
+      return 13.72 - 0.332447*t + 0.0068612*t*t + 0.0041116*t*t*t - 0.00037436*Math.pow(t,4) + 0.0000121272*Math.pow(t,5) - 0.0000001699*Math.pow(t,6) + 0.000000000875*Math.pow(t,7); }
+    if(y < 1900){ t = y-1860; return 7.62 + 0.5737*t - 0.251754*t*t + 0.01680668*t*t*t - 0.0004473624*Math.pow(t,4) + Math.pow(t,5)/233174; }
+    if(y < 1920){ t = y-1900; return -2.79 + 1.494119*t - 0.0598939*t*t + 0.0061966*t*t*t - 0.000197*Math.pow(t,4); }
+    if(y < 1941){ t = y-1920; return 21.20 + 0.84493*t - 0.076100*t*t + 0.0020936*t*t*t; }
+    if(y < 1961){ t = y-1950; return 29.07 + 0.407*t - t*t/233 + t*t*t/2547; }
+    if(y < 1986){ t = y-1975; return 45.45 + 1.067*t - t*t/260 - t*t*t/718; }
+    if(y < 2005){ t = y-2000; return 63.86 + 0.3345*t - 0.060374*t*t + 0.0017275*t*t*t + 0.000651814*Math.pow(t,4) + 0.00002373599*Math.pow(t,5); }
+    if(y < 2050){ t = y-2000; return 62.92 + 0.32217*t + 0.005589*t*t; }
+    u = (y-1820)/100; return -20 + 32*u*u - 0.5628*(2150-y);
+  }
+
+  // [D, M, M', F, coefficient in 1e-6 degrees] — largest terms of the Moon's longitude
+  var LTERMS = [
+    [0,0,1,0,6288774],[2,0,-1,0,1274027],[2,0,0,0,658314],[0,0,2,0,213618],[0,1,0,0,-185116],
+    [0,0,0,2,-114332],[2,0,-2,0,58793],[2,-1,-1,0,57066],[2,0,1,0,53322],[2,-1,0,0,45758],
+    [0,1,-1,0,-40923],[1,0,0,0,-34720],[0,1,1,0,-30383],[2,0,0,-2,15327],[0,0,1,2,-12528],
+    [0,0,1,-2,10980],[4,0,-1,0,10675],[0,0,3,0,10034],[4,0,-2,0,8548],[2,1,-1,0,-7888],
+    [2,1,0,0,-6766],[1,0,-1,0,-5163],[1,1,0,0,4987],[2,-1,1,0,4036],[2,0,2,0,3994],
+    [4,0,0,0,3861],[2,0,-3,0,3665],[0,1,-2,0,-2689],[2,0,-1,2,-2602],[2,-1,-2,0,2390],
+    [1,0,1,0,-2348],[2,-2,0,0,2236],[0,1,2,0,-2120],[0,2,0,0,-2069]
+  ];
+
+  function elongation(jdUT){               // degrees east of the Sun, 0 = new, 180 = full
+    var jde = jdUT + deltaT(2000+(jdUT-2451545)/365.25)/86400;
+    var T = (jde-2451545)/36525, T2 = T*T, T3 = T2*T, T4 = T3*T;
+    var Lp = 218.3164477 + 481267.88123421*T - 0.0015786*T2 + T3/538841 - T4/65194000;
+    var D  = 297.8501921 + 445267.1114034*T  - 0.0018819*T2 + T3/545868 - T4/113065000;
+    var M  = 357.5291092 + 35999.0502909*T   - 0.0001536*T2 + T3/24490000;
+    var Mp = 134.9633964 + 477198.8675055*T  + 0.0087414*T2 + T3/69699  - T4/14712000;
+    var F  = 93.2720950  + 483202.0175233*T  - 0.0036539*T2 - T3/3526000 + T4/863310000;
+    var E = 1 - 0.002516*T - 0.0000074*T2, s = 0;
+    for(var i=0;i<LTERMS.length;i++){
+      var r = LTERMS[i], m = Math.abs(r[1]);
+      s += r[4]*(m===1?E:m===2?E*E:1)*Math.sin((r[0]*D + r[1]*M + r[2]*Mp + r[3]*F)*DEG);
+    }
+    s += 3958*Math.sin((119.75+131.849*T)*DEG) + 1962*Math.sin((Lp-F)*DEG) + 318*Math.sin((53.09+479264.290*T)*DEG);
+    var moon = Lp + s/1e6;
+    var L0 = 280.46646 + 36000.76983*T + 0.0003032*T2;
+    var C = (1.914602 - 0.004817*T - 0.000014*T2)*Math.sin(M*DEG) + (0.019993 - 0.000101*T)*Math.sin(2*M*DEG) + 0.000289*Math.sin(3*M*DEG);
+    var sun = L0 + C - 0.00569;            // aberration; nutation cancels in the difference
+    return norm360(moon - sun);
+  }
+
+  // instant near jd when the elongation equals target (0, 90, 180, 270)
+  function findPhase(jd, target){
+    for(var i=0;i<20;i++){
+      var diff = ((elongation(jd)-target+540)%360)-180;
+      jd -= diff/12.1907;
+      if(Math.abs(diff)<1e-6) break;
+    }
+    return jd;
+  }
+  function lunation(jd){                   // principal phases of the lunation containing jd
+    var nm = findPhase(jd - elongation(jd)/12.1907, 0);
+    if(nm > jd) nm = findPhase(nm - SYN, 0);
+    var next = findPhase(nm + SYN, 0);
+    if(next <= jd){ nm = next; next = findPhase(nm + SYN, 0); }
+    return { nm:nm, fq:findPhase(nm+SYN/4,90), fm:findPhase(nm+SYN/2,180), lq:findPhase(nm+3*SYN/4,270), next:next };
+  }
+
+  // --- calendars: Julian before 15 Oct 1582, Gregorian after --------------
+  // y is an astronomical year (1 BC = 0, 2 BC = -1 ...)
+  function isGregorian(y,m,d){ return y>1582 || (y===1582 && (m>10 || (m===10 && d>=15))); }
+  function monthLength(y,m){
+    if(m===2){
+      var leap = (y>1582) ? ((y%4===0 && y%100!==0) || y%400===0) : (((y%4)+4)%4===0);
+      return leap ? 29 : 28;
+    }
+    return [31,28,31,30,31,30,31,31,30,31,30,31][m-1];
+  }
+  function calToJD(y,m,d){
+    var greg = isGregorian(y,m,d), back = 0;
+    if(y < -4000){ y += 8000; back = 2922000; }          // 8000 Julian years
+    if(m<=2){ y -= 1; m += 12; }
+    var A = Math.floor(y/100), B = greg ? 2-A+Math.floor(A/4) : 0;
+    return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + B - 1524.5 - back;
+  }
+  function jdToCal(jd){
+    var julian = jd < 2299160.5, back = 0;
+    if(jd < 0){ jd += 2922000; back = 8000; }
+    var Z = Math.floor(jd+0.5), F = jd+0.5-Z, A = Z;
+    if(!julian){ var al = Math.floor((Z-1867216.25)/36524.25); A = Z+1+al-Math.floor(al/4); }
+    var B = A+1524, C = Math.floor((B-122.1)/365.25), Dd = Math.floor(365.25*C), E = Math.floor((B-Dd)/30.6001);
+    var day = B-Dd-Math.floor(30.6001*E)+F, mo = E<14 ? E-1 : E-13, yr = mo>2 ? C-4716 : C-4715;
+    return { y:yr-back, m:mo, d:Math.floor(day), h:(day-Math.floor(day))*24, wd:(((Math.floor(jd+1.5))%7)+7)%7, julian:julian };
+  }
+  // minutes to subtract from UT to get the viewer's local time
+  function tzOffset(jdUT){
+    if(jdUT > 2299160.5){ var o = new Date((jdUT-2440587.5)*864e5).getTimezoneOffset(); if(isFinite(o)) return o; }
+    return new Date(2001,0,1).getTimezoneOffset();
   }
 
   function fmtTime(h){
@@ -324,7 +475,8 @@
     elSub.innerHTML = PHASES[idx].s.toUpperCase();
 
     document.getElementById("r-illum").textContent = (k*100).toFixed(0)+"%";
-    document.getElementById("r-age").textContent = day.toFixed(1)+" d";
+    document.getElementById("r-age").textContent = (lookupDay!==null && day===lookupDay ? lookupAge : day).toFixed(1)+" d";
+    document.getElementById("lu-rot").setAttribute("transform", south ? "rotate(180)" : "");
     document.getElementById("r-elong").textContent = (day/SYN*360).toFixed(0)+"°";
     var rise = 6 + day*(24/SYN);
     document.getElementById("r-rise").textContent = fmtTime(rise);
@@ -377,7 +529,70 @@
       raf=requestAnimationFrame(loop);
     })(last);
   });
-  document.getElementById("today").addEventListener("click", function(){ stop(); setDay(todayAge()); });
+  // --- date lookup -------------------------------------------------------
+  var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var WDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var lookupDay = null, lookupAge = 0;
+  var luForm = document.getElementById("lu-form"), luMonth = document.getElementById("lu-month"),
+      luDay = document.getElementById("lu-day"), luYear = document.getElementById("lu-year"),
+      luEra = document.getElementById("lu-era"), luMsg = document.getElementById("lu-msg");
+
+  function yearLabel(y){ return y<=0 ? (1-y)+" BC" : y<1000 ? "AD "+y : String(y); }
+  function dayLabel(c,long){
+    return long ? WDAYS[c.wd]+", "+MONTHS[c.m-1]+" "+c.d+", "+yearLabel(c.y)
+                : WDAYS[c.wd].slice(0,3)+", "+MONTHS[c.m-1].slice(0,3)+" "+c.d+", "+yearLabel(c.y);
+  }
+  function localCal(jdUT){ return jdToCal(jdUT - tzOffset(jdUT)/1440); }
+  function nowJD(){ return Date.now()/864e5 + 2440587.5; }
+
+  function showInstant(jdUT, label){
+    var e = elongation(jdUT), L = lunation(jdUT), theta = e*DEG;
+    stop();
+    lookupAge = jdUT - L.nm;
+    day = wrap(e/360*SYN); lookupDay = day;
+    render();
+
+    var here = localCal(jdUT), precise = here.y>=1600 && here.y<=2150;
+    document.getElementById("lu-date").textContent = dayLabel(here,true);
+    document.getElementById("lu-phase").textContent = PHASES[phaseIndex(day)].n+" · "+Math.round((1-Math.cos(theta))/2*100)+"% lit · "+lookupAge.toFixed(1)+" days since new moon";
+
+    var ev = [{n:"New moon",jd:L.nm},{n:"First quarter",jd:L.fq},{n:"Full moon",jd:L.fm},{n:"Last quarter",jd:L.lq},{n:"Next new moon",jd:L.next},{n:label,jd:jdUT,you:true}];
+    ev.sort(function(a,b){ return a.jd-b.jd; });
+    document.getElementById("lu-cycle").innerHTML = ev.map(function(x){
+      var c = localCal(x.jd), tm = (x.you || precise) ? '<br><span class="tm">'+fmtTime(c.h)+'</span>' : '';
+      return '<li'+(x.you?' class="you"':'')+'><b>'+x.n+'</b>'+dayLabel(c,false)+tm+'</li>';
+    }).join("");
+
+    var note = [];
+    if(here.julian) note.push("Dates before October 15, 1582 are in the Julian calendar, the calendar in use at the time.");
+    if(here.y<=0) note.push("There was no year 0: 1 BC was followed directly by AD 1.");
+    if(precise) note.push("Times are in your time zone and accurate to within a few minutes.");
+    else if(here.y>=-500 && here.y<=3000) note.push("Phase dates are for your time zone. Times are only good to about an hour this far from today, so they are left off.");
+    else note.push("This far from today the timing is uncertain by several hours, because Earth’s spin rate then can only be estimated. A new or full moon near midnight could fall on the day before or after.");
+    document.getElementById("lu-note").textContent = note.join(" ");
+
+    var lit = document.getElementById("lu-lit");
+    lit.setAttribute("d", litPath(10.5, theta));
+    lit.setAttribute("transform", theta>Math.PI ? "scale(-1,1)" : "");
+    document.getElementById("lu-result").hidden = false;
+  }
+
+  function fail(text){ luMsg.textContent = text; luMsg.hidden = false; }
+  luForm.addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var m = parseInt(luMonth.value,10), d = parseInt(luDay.value,10), Y = parseInt(luYear.value,10);
+    if(!(Y>=1 && Y<=5000)) return fail("Enter a year from 1 to 5000, then choose AD or BC.");
+    var y = luEra.value==="BC" ? 1-Y : Y, len = monthLength(y,m);
+    if(!(d>=1 && d<=len)) return fail(MONTHS[m-1]+" "+yearLabel(y)+" has "+len+" days. Enter a day from 1 to "+len+".");
+    if(y===1582 && m===10 && d>4 && d<15) return fail("October 5–14, 1582 never happened. When the Gregorian calendar began, Thursday, October 4 was followed by Friday, October 15.");
+    luMsg.hidden = true;
+    var jd0 = calToJD(y,m,d);
+    showInstant(jd0 + 21/24 + tzOffset(jd0+0.5)/1440, "Your date · evening");
+  });
+
+  function fillForm(c){ luMonth.value = String(c.m); luDay.value = c.d; luYear.value = c.y<=0 ? 1-c.y : c.y; luEra.value = c.y<=0 ? "BC" : "AD"; }
+  function goNow(){ var jd = nowJD(); fillForm(localCal(jd)); luMsg.hidden = true; showInstant(jd, "Right now"); }
+  document.getElementById("today").addEventListener("click", goNow);
 
   var hn=document.getElementById("hemi-n"), hs=document.getElementById("hemi-s"), hc=document.getElementById("hemi-cap");
   function setHemi(v){
@@ -389,7 +604,7 @@
   hn.addEventListener("click", function(){ setHemi(false); });
   hs.addEventListener("click", function(){ setHemi(true); });
 
-  setDay(todayAge());
+  goNow();
 })();
 </script>
 </body>
