@@ -1,9 +1,9 @@
-# Moon Phase Orrery
+# Moon Phase Simulator
 
 An interactive lunar phase simulator for the classroom. Drag the Moon around its
 orbit and watch the phase you would actually see from Earth change in step.
 
-**[Open the simulator →](https://fractalated.github.io/moon-phase-orrery/)**
+**[Open the simulator →](https://fractalated.github.io/moon-phase-simulator/)**
 
 ## What it does
 
