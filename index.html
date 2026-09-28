@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="An interactive lunar phase simulator: drag the Moon around its orbit and watch the phase you would see from Earth change in step.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Moon Phase Simulator">
@@ -77,6 +77,7 @@
   /* phones: keep the phase name on screen with the Moon, and give the phase buttons room */
   @media (max-width:560px){
     .wrap{padding-block:20px 36px}
+    .wrap{padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}
     #moonview{max-width:230px;margin:0 auto}
     .phase-name{font-size:24px}
     .ticks{grid-template-columns:repeat(4,1fr);row-gap:10px}
